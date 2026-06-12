@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "recruiter": "./graph/builder.py:build_graph"
+  },
+  "env": ".env"
+}

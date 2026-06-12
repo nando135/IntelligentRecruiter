@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Python AI Backend
+intelligent-recruiter-ai/venv/
+intelligent-recruiter-ai/__pycache__/
+intelligent-recruiter-ai/*.pyc
+intelligent-recruiter-ai/.pytest_cache/
+intelligent-recruiter-ai/.env
+intelligent-recruiter-ai/.ipynb_checkpoints/
+# LangGraph
+intelligent-recruiter-ai/.langgraph_api/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
