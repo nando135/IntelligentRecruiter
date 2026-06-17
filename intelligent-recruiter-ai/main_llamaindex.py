@@ -12,27 +12,10 @@ from datetime import datetime
 
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain_ollama import ChatOllama
-from datetime import date as _date
 
 from db import get_conn
-
-# ─── CV Scan Rate Limit (10/day) ─────────────────────────────────────────────
-_DAILY_SCAN_LIMIT = 10
-_scan_count: int = 0
-_scan_date: _date = _date.today()
-
-def _check_scan_limit():
-    global _scan_count, _scan_date
-    today = _date.today()
-    if today != _scan_date:
-        _scan_count = 0
-        _scan_date = today
-    if _scan_count >= _DAILY_SCAN_LIMIT:
-        return False
-    _scan_count += 1
-    return True
 from graph.runner import run_chat, clear_thread
-from cv_parser_gemini import parse_cv_gemini
+from cv_parser_v2 import parse_cv_v2
 
 load_dotenv()
 
@@ -1783,7 +1766,7 @@ def health_check():
         "ai_provider":  "ollama",
         "ollama_url":   OLLAMA_URL,
         "ollama_model": OLLAMA_MODEL,
-        "mode":         "llamaindex + gemini structured extraction",
+        "mode":         "llamaindex + ollama structured extraction",
     }
 
 @app.post("/rank-candidates")
@@ -1860,12 +1843,6 @@ def rank_candidates_by_job(req: JobRankCandidatesRequest):
 
 @app.post("/parse-cv")
 async def parse_cv(file: UploadFile = File(...)):
-    if not _check_scan_limit():
-        return JSONResponse(status_code=429, content={
-            "status": "error",
-            "message": f"Daily CV scan limit of {_DAILY_SCAN_LIMIT} reached. Resets at midnight.",
-        })
-
     suffix = os.path.splitext(file.filename)[1].lower()
 
     if suffix not in [".pdf", ".docx"]:
@@ -1879,7 +1856,7 @@ async def parse_cv(file: UploadFile = File(...)):
         temp_path = tmp.name
 
     try:
-        return parse_cv_gemini(temp_path, file.filename)
+        return parse_cv_v2(temp_path, file.filename)
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

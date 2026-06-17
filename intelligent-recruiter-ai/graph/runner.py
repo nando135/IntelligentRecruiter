@@ -32,17 +32,29 @@ def run_chat(thread_id: str, user_message: str) -> str:
     })
 
     ai_msgs = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    return ai_msgs[-1].content if ai_msgs else "No response generated."
+    if not ai_msgs:
+        return "No response generated."
+    return _content_str(ai_msgs[-1].content)
 
 
 def clear_thread(thread_id: str):
     _get_checkpointer().delete(thread_id)
 
 
+def _content_str(content) -> str:
+    """Normalize Gemini content — newer models return a list of parts."""
+    if isinstance(content, list):
+        return " ".join(
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+        ).strip()
+    return str(content or "").strip()
+
+
 def _serialize(messages: list[BaseMessage]) -> list[dict]:
     role_map = {HumanMessage: "human", AIMessage: "ai", SystemMessage: "system"}
     return [
-        {"role": role_map.get(type(m), "system"), "content": m.content}
+        {"role": role_map.get(type(m), "system"), "content": _content_str(m.content)}
         for m in messages
         if type(m) in role_map
     ]

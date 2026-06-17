@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SendCandidateApprovalEmail;
 use App\Models\ApprovedCandidate;
 use App\Models\Candidate;
-use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,22 +21,13 @@ class CandidateApprovalController extends Controller
             return back()->with('error', 'This candidate is already approved.');
         }
 
-        if (! $candidate->email) {
-            return back()->with('error', 'This candidate cannot be approved because no email address was found.');
-        }
-
-        $template = EmailTemplate::getActiveOrDefault();
-
-        $approvedCandidate = $this->approveCandidate(
+        $this->approveCandidate(
             candidate: $candidate,
-            template: $template,
             approvalSource: $validated['approval_source'] ?? 'single',
             approvalNote: $validated['approval_note'] ?? null
         );
 
-        SendCandidateApprovalEmail::dispatch($approvedCandidate->id);
-
-        return back()->with('success', 'Candidate approved successfully. Confirmation email has been queued.');
+        return back()->with('success', 'Candidate approved successfully.');
     }
 
     public function bulkApprove(Request $request)
@@ -49,12 +38,11 @@ class CandidateApprovalController extends Controller
             'approval_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $template = EmailTemplate::getActiveOrDefault();
-
-        $candidates = Candidate::whereIn('id', $validated['candidate_ids'])->get();
+        $candidates = Candidate::whereIn('id', $validated['candidate_ids'])
+            ->where('user_id', Auth::id())
+            ->get();
 
         $approvedCount = 0;
-        $queuedEmailCount = 0;
         $skippedCount = 0;
 
         foreach ($candidates as $candidate) {
@@ -63,42 +51,27 @@ class CandidateApprovalController extends Controller
                 continue;
             }
 
-            if (! $candidate->email) {
-                $candidate->update([
-                    'email_status' => 'failed',
-                    'email_error' => 'Candidate does not have an email address.',
-                ]);
-
-                $skippedCount++;
-                continue;
-            }
-
-            $approvedCandidate = $this->approveCandidate(
+            $this->approveCandidate(
                 candidate: $candidate,
-                template: $template,
                 approvalSource: 'bulk',
                 approvalNote: $validated['approval_note'] ?? null
             );
 
-            SendCandidateApprovalEmail::dispatch($approvedCandidate->id);
-
             $approvedCount++;
-            $queuedEmailCount++;
         }
 
         return back()->with(
             'success',
-            "{$approvedCount} candidate(s) approved. {$queuedEmailCount} email(s) queued. {$skippedCount} candidate(s) skipped."
+            "{$approvedCount} candidate(s) approved. {$skippedCount} candidate(s) skipped."
         );
     }
 
     private function approveCandidate(
         Candidate $candidate,
-        EmailTemplate $template,
         string $approvalSource,
         ?string $approvalNote
     ): ApprovedCandidate {
-        return DB::transaction(function () use ($candidate, $template, $approvalSource, $approvalNote) {
+        return DB::transaction(function () use ($candidate, $approvalSource, $approvalNote) {
             $approvedAt = now();
 
             $candidate->update([
@@ -107,9 +80,6 @@ class CandidateApprovalController extends Controller
                 'approved_by' => Auth::id(),
                 'approval_note' => $approvalNote,
                 'approval_source' => $approvalSource,
-                'email_status' => 'queued',
-                'email_error' => null,
-                'email_template_id' => $template->id,
             ]);
 
             return ApprovedCandidate::updateOrCreate(
@@ -127,10 +97,6 @@ class CandidateApprovalController extends Controller
                     'approved_at' => $approvedAt,
                     'approval_note' => $approvalNote,
                     'approval_source' => $approvalSource,
-                    'email_template_id' => $template->id,
-                    'email_status' => 'queued',
-                    'email_sent_at' => null,
-                    'email_error' => null,
                 ]
             );
         });

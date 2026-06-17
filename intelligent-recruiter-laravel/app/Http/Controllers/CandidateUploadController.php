@@ -13,6 +13,7 @@ use App\Models\CandidateProject;
 use App\Models\CandidateSkill;
 use App\Services\CandidateRankingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +31,8 @@ class CandidateUploadController extends Controller
     $search = $request->query('search');
 
     $query = Candidate::with('skills')
-        ->withCount(['experiences', 'educations', 'skills']);
+        ->withCount(['experiences', 'educations', 'skills'])
+        ->where('user_id', Auth::id());
 
     if ($selectedCategory && in_array($selectedCategory, $categories, true)) {
         $query->where('candidate_category', $selectedCategory);
@@ -119,18 +121,24 @@ class CandidateUploadController extends Controller
             $candidateData  = $data['candidate'] ?? [];
             $classification = $data['classification'] ?? [];
             $email          = $candidateData['email'] ?? null;
+            $userId         = Auth::id();
 
             $candidate = null;
 
             if ($fileHash) {
-                $candidate = Candidate::where('file_hash', $fileHash)->first();
+                $candidate = Candidate::where('file_hash', $fileHash)
+                    ->where('user_id', $userId)
+                    ->first();
             }
 
             if (! $candidate && $email) {
-                $candidate = Candidate::where('email', $email)->first();
+                $candidate = Candidate::where('email', $email)
+                    ->where('user_id', $userId)
+                    ->first();
             }
 
             $fields = [
+                'user_id'                      => $userId,
                 'full_name'                    => $candidateData['full_name'] ?? null,
                 'email'                        => $email,
                 'phone'                        => $candidateData['phone'] ?? null,

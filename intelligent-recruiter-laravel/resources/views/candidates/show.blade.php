@@ -1,365 +1,358 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('candidates.index') }}" class="text-blue-700">← Back to Candidates</a>
+
+{{-- Page Header --}}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;">
+    <a href="{{ route('candidates.index') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#64748b;text-decoration:none;font-weight:500;transition:color .12s;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8L10 13"/></svg>
+        Back to Candidates
+    </a>
+
+    @if($candidate->approval_status !== 'approved')
+        <form method="POST" action="{{ route('candidates.approve', $candidate) }}">
+            @csrf
+            <input type="hidden" name="approval_source" value="single">
+            <button type="submit" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8L6 11.5L13.5 4"/></svg>
+                Approve Candidate
+            </button>
+        </form>
+    @else
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;border-radius:8px;font-size:12.5px;font-weight:600;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8L6 11.5L13.5 4"/></svg>
+            Approved
+        </span>
+    @endif
 </div>
 
-{{-- Parser Status Warning --}}
+{{-- Parser Status --}}
 @if($candidate->parser_status === 'partial')
-    <div class="mb-6 bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-4 rounded-lg">
-        <strong>⚠ Partial Extraction</strong> — Qwen could not fully parse this CV. Some fields may be missing.
-        @if($candidate->parser_warning)
-            <div class="mt-1 text-sm font-mono">{{ $candidate->parser_warning }}</div>
-        @endif
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:13px;color:#92400e;margin-bottom:1.25rem;">
+        <span>⚠</span>
+        <div><strong>Partial Extraction</strong> — Some fields may be missing.
+            @if($candidate->parser_warning)<div style="margin-top:4px;font-family:monospace;font-size:11px;">{{ $candidate->parser_warning }}</div>@endif
+        </div>
     </div>
 @elseif($candidate->parser_status === 'failed')
-    <div class="mb-6 bg-red-50 border border-red-300 text-red-800 px-4 py-4 rounded-lg">
-        <strong>✗ Extraction Failed</strong> — CV could not be parsed. See raw text below for debugging.
-        @if($candidate->parser_warning)
-            <div class="mt-1 text-sm font-mono">{{ $candidate->parser_warning }}</div>
-        @endif
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;font-size:13px;color:#991b1b;margin-bottom:1.25rem;">
+        <span>✗</span>
+        <div><strong>Extraction Failed</strong>
+            @if($candidate->parser_warning)<div style="margin-top:4px;font-family:monospace;font-size:11px;">{{ $candidate->parser_warning }}</div>@endif
+        </div>
     </div>
 @elseif($candidate->parser_status === 'success')
-    <div class="mb-6 bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-lg">
-        <strong>✓ Extraction Successful</strong>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;font-size:13px;color:#065f46;font-weight:500;margin-bottom:1.25rem;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M5 8L7 10L11 6"/></svg>
+        Extraction Successful
     </div>
 @endif
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    {{-- Left Column --}}
-    <div class="lg:col-span-1 space-y-6">
+    {{-- LEFT COLUMN --}}
+    <div class="lg:col-span-1 space-y-4">
 
-        {{-- Basic Info --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h1 class="text-2xl font-bold">{{ $candidate->full_name ?? 'Unknown Candidate' }}</h1>
-            <p class="text-slate-600 mt-1">{{ $candidate->current_job_title ?? 'No current role detected' }}</p>
+        {{-- Profile Card --}}
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            {{-- Avatar --}}
+            <div style="width:52px;height:52px;border-radius:50%;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;margin-bottom:1rem;">
+                {{ strtoupper(substr($candidate->full_name ?? 'U', 0, 1)) }}
+            </div>
+            <h1 style="font-size:1.2rem;font-weight:700;color:#0f172a;line-height:1.25;margin-bottom:2px;">{{ $candidate->full_name ?? 'Unknown Candidate' }}</h1>
+            <p style="font-size:13px;color:#64748b;margin-bottom:1.25rem;">{{ $candidate->current_job_title ?? 'No current role detected' }}</p>
 
-            <div class="mt-6 space-y-2 text-sm">
-                <p><strong>Email:</strong> {{ $candidate->email ?? '-' }}</p>
-                <p><strong>Phone:</strong> {{ $candidate->phone ?? '-' }}</p>
-                <p><strong>Location:</strong> {{ $candidate->location ?? '-' }}</p>
-                <p><strong>Latest Company:</strong> {{ $candidate->latest_company ?? '-' }}</p>
-                <p><strong>Total Experience:</strong>
-                    @if($candidate->total_experience_years)
-                        {{ $candidate->total_experience_years }} years
-                    @elseif($candidate->total_experience_months)
-                        {{ $candidate->total_experience_months }} months
-                    @else
-                        -
-                    @endif
-                </p>
-                <p><strong>Parser Status:</strong>
-                    <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
-                        {{ $candidate->parser_status ?? 'unknown' }}
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                @if($candidate->email)
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">Email</span>
+                    <span style="color:#0f172a;word-break:break-all;">{{ $candidate->email }}</span>
+                </div>
+                @endif
+                @if($candidate->phone)
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">Phone</span>
+                    <span style="color:#0f172a;">{{ $candidate->phone }}</span>
+                </div>
+                @endif
+                @if($candidate->location)
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">Location</span>
+                    <span style="color:#0f172a;">{{ $candidate->location }}</span>
+                </div>
+                @endif
+                @if($candidate->latest_company)
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">Company</span>
+                    <span style="color:#0f172a;">{{ $candidate->latest_company }}</span>
+                </div>
+                @endif
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">Experience</span>
+                    <span style="color:#0f172a;">
+                        @if($candidate->total_experience_years) {{ $candidate->total_experience_years }} yrs
+                        @elseif($candidate->total_experience_months) {{ $candidate->total_experience_months }} mo
+                        @else -
+                        @endif
                     </span>
-                </p>
-                <p><strong>Source File:</strong> {{ $candidate->source_filename ?? '-' }}</p>
+                </div>
+                @if($candidate->source_filename)
+                <div style="display:flex;gap:8px;">
+                    <span style="color:#94a3b8;width:80px;flex-shrink:0;">File</span>
+                    <span style="color:#64748b;font-size:12px;">{{ $candidate->source_filename }}</span>
+                </div>
+                @endif
             </div>
         </div>
 
-        {{-- AI Classification & Ranking --}}
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-    <h2 class="text-xl font-bold mb-4">AI Classification & Ranking</h2>
+        {{-- AI Classification --}}
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.25rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:12px;">AI Classification</p>
 
-    <div class="space-y-2 text-sm">
-        <p>
-            <strong>Category:</strong>
-            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs">
-                {{ $candidate->candidate_category ?? '-' }}
-            </span>
-        </p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <span style="font-size:13px;color:#64748b;">Category</span>
+                <span style="background:#f1f5f9;color:#0f172a;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;">{{ $candidate->candidate_category ?? '-' }}</span>
+            </div>
 
-        <p>
-            <strong>Classification Confidence:</strong>
-            {{ $candidate->classification_confidence !== null ? number_format($candidate->classification_confidence, 2) . '%' : '-' }}
-        </p>
-
-        <p>
-            <strong>Rank:</strong>
-            {{ $candidate->leaderboard_rank ? '#' . $candidate->leaderboard_rank : '-' }}
-        </p>
-
-        <p>
-            <strong>Score:</strong>
-            {{ $candidate->leaderboard_score !== null ? number_format($candidate->leaderboard_score, 2) : '-' }}
-        </p>
-
-        <p>
-            <strong>Match:</strong>
-            {{ $candidate->match_percentage !== null ? number_format($candidate->match_percentage, 2) . '%' : '-' }}
-        </p>
-
-        <p>
-            <strong>Classification Reason:</strong><br>
-            <span class="text-slate-600">{{ $candidate->classification_reason ?? '-' }}</span>
-        </p>
-
-        <p>
-            <strong>Ranking Reason:</strong><br>
-            <span class="text-slate-600">{{ $candidate->ranking_reason ?? '-' }}</span>
-        </p>
-    </div>
-</div>
-
-        {{-- Links --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Links</h2>
-            @if($candidate->links)
-                <div class="space-y-2 text-sm">
-                    @if($candidate->links->linkedin)
-                        <p><strong>LinkedIn:</strong> <a href="{{ $candidate->links->linkedin }}" class="text-blue-600" target="_blank">{{ $candidate->links->linkedin }}</a></p>
-                    @endif
-                    @if($candidate->links->github)
-                        <p><strong>GitHub:</strong> <a href="{{ $candidate->links->github }}" class="text-blue-600" target="_blank">{{ $candidate->links->github }}</a></p>
-                    @endif
-                    @if($candidate->links->portfolio)
-                        <p><strong>Portfolio:</strong> <a href="{{ $candidate->links->portfolio }}" class="text-blue-600" target="_blank">{{ $candidate->links->portfolio }}</a></p>
-                    @endif
-                    @if($candidate->links->website)
-                        <p><strong>Website:</strong> <a href="{{ $candidate->links->website }}" class="text-blue-600" target="_blank">{{ $candidate->links->website }}</a></p>
-                    @endif
-                    @if(!$candidate->links->linkedin && !$candidate->links->github && !$candidate->links->portfolio && !$candidate->links->website)
-                        <p class="text-slate-500">No links detected.</p>
-                    @endif
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+                <div style="text-align:center;padding:10px 6px;background:#f8f9fc;border-radius:8px;">
+                    <div style="font-size:17px;font-weight:700;color:#0f172a;">{{ $candidate->leaderboard_rank ? '#'.$candidate->leaderboard_rank : '—' }}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Rank</div>
                 </div>
-            @else
-                <p class="text-slate-500">No links detected.</p>
+                <div style="text-align:center;padding:10px 6px;background:#f8f9fc;border-radius:8px;">
+                    <div style="font-size:17px;font-weight:700;color:#0f172a;">{{ $candidate->leaderboard_score !== null ? number_format($candidate->leaderboard_score, 1) : '—' }}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Score</div>
+                </div>
+                <div style="text-align:center;padding:10px 6px;background:#f8f9fc;border-radius:8px;">
+                    <div style="font-size:17px;font-weight:700;color:#0f172a;">{{ $candidate->match_percentage !== null ? number_format($candidate->match_percentage, 0).'%' : '—' }}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Match</div>
+                </div>
+            </div>
+
+            @if($candidate->classification_confidence !== null)
+            <div style="margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px;">
+                    <span>Confidence</span><span>{{ number_format($candidate->classification_confidence, 1) }}%</span>
+                </div>
+                <div style="background:#f1f5f9;border-radius:99px;height:5px;">
+                    <div style="background:#1d4ed8;height:5px;border-radius:99px;width:{{ min($candidate->classification_confidence, 100) }}%;transition:width .4s;"></div>
+                </div>
+            </div>
+            @endif
+
+            @if($candidate->classification_reason)
+            <p style="font-size:11.5px;color:#64748b;line-height:1.5;padding-top:8px;border-top:1px solid #f1f5f9;">{{ $candidate->classification_reason }}</p>
             @endif
         </div>
 
-        {{-- Languages --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Languages</h2>
-            @forelse($candidate->languages as $lang)
-                <div class="flex justify-between text-sm py-1 border-b border-slate-100">
-                    <span>{{ $lang->language }}</span>
-                    <span class="text-slate-500">{{ $lang->proficiency ?? '-' }}</span>
-                </div>
-            @empty
-                <p class="text-slate-500">No languages detected.</p>
-            @endforelse
+        {{-- Links --}}
+        @if($candidate->links && ($candidate->links->linkedin || $candidate->links->github || $candidate->links->portfolio || $candidate->links->website))
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.25rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:12px;">Links</p>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                @if($candidate->links->linkedin)
+                <a href="{{ $candidate->links->linkedin }}" target="_blank" style="display:flex;align-items:center;gap:8px;color:#1d4ed8;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                    LinkedIn
+                </a>
+                @endif
+                @if($candidate->links->github)
+                <a href="{{ $candidate->links->github }}" target="_blank" style="display:flex;align-items:center;gap:8px;color:#1d4ed8;text-decoration:none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                    GitHub
+                </a>
+                @endif
+                @if($candidate->links->portfolio)
+                <a href="{{ $candidate->links->portfolio }}" target="_blank" style="display:flex;align-items:center;gap:8px;color:#1d4ed8;text-decoration:none;">Portfolio</a>
+                @endif
+            </div>
         </div>
+        @endif
 
-        {{-- Debug API Links --}}
-        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 text-xs space-y-1">
-            <p class="font-semibold text-slate-700 mb-2">Debug API Links</p>
-            <a href="/api/candidates/{{ $candidate->id }}" class="block text-blue-600" target="_blank">Full JSON from MySQL</a>
-            <a href="/api/candidates/{{ $candidate->id }}/parsed-json" class="block text-blue-600" target="_blank">Parsed JSON</a>
-            <a href="/api/candidates/{{ $candidate->id }}/raw-text" class="block text-blue-600" target="_blank">Raw Text</a>
-            <a href="/api/candidates/{{ $candidate->id }}/experiences" class="block text-blue-600" target="_blank">Experiences</a>
-            <a href="/api/candidates/{{ $candidate->id }}/skills" class="block text-blue-600" target="_blank">Skills</a>
+        {{-- Languages --}}
+        @if($candidate->languages->count())
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.25rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:12px;">Languages</p>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                @foreach($candidate->languages as $lang)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#0f172a;">{{ $lang->language }}</span>
+                    <span style="color:#94a3b8;font-size:12px;">{{ $lang->proficiency ?? '-' }}</span>
+                </div>
+                @endforeach
+            </div>
         </div>
+        @endif
+
     </div>
 
-    {{-- Right Column --}}
-    <div class="lg:col-span-2 space-y-6">
+    {{-- RIGHT COLUMN --}}
+    <div class="lg:col-span-2 space-y-4">
 
-        {{-- Professional Summary --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Professional Summary</h2>
-            <p class="text-slate-700">
-                {{ $candidate->professional_summary ?? 'No professional summary detected.' }}
-            </p>
+        {{-- Summary --}}
+        @if($candidate->professional_summary)
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;">Professional Summary</p>
+            <p style="font-size:13.5px;color:#374151;line-height:1.7;">{{ $candidate->professional_summary }}</p>
         </div>
+        @endif
 
         {{-- Work Experience --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Work Experience
-                <span class="text-sm font-normal text-slate-500">({{ $candidate->experiences->count() }} entries)</span>
-            </h2>
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;">Work Experience</p>
+                <span style="font-size:11px;color:#94a3b8;">{{ $candidate->experiences->count() }} entries</span>
+            </div>
 
             @forelse($candidate->experiences as $exp)
-                <div class="border-b border-slate-200 pb-5 mb-5">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-lg">{{ $exp->job_title ?? 'Role not detected' }}</h3>
-                            <p class="text-slate-700">{{ $exp->company_name ?? 'Company not detected' }}</p>
-                        </div>
-                        @if($exp->is_current)
-                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Current</span>
-                        @endif
+            <div style="padding-bottom:1.25rem;margin-bottom:1.25rem;border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                    <div>
+                        <h3 style="font-size:14px;font-weight:600;color:#0f172a;">{{ $exp->job_title ?? 'Role not detected' }}</h3>
+                        <p style="font-size:13px;color:#475569;margin-top:1px;">{{ $exp->company_name ?? 'Company not detected' }}</p>
                     </div>
-                    <p class="text-sm text-slate-500 mt-1">
-                        {{ $exp->start_date ?? '-' }} → {{ $exp->end_date ?? '-' }}
-                        @if($exp->duration_months)
-                            · {{ $exp->duration_months }} months
-                        @endif
-                        @if($exp->employment_type)
-                            · {{ $exp->employment_type }}
-                        @endif
-                    </p>
-
-                    @if($exp->responsibilities && count($exp->responsibilities) > 0)
-                        <h4 class="font-semibold mt-3 text-sm">Responsibilities</h4>
-                        <ul class="list-disc ml-6 text-sm text-slate-700 mt-1 space-y-1">
-                            @foreach($exp->responsibilities as $item)
-                                <li>{{ $item }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    @if($exp->achievements && count($exp->achievements) > 0)
-                        <h4 class="font-semibold mt-3 text-sm">Achievements</h4>
-                        <ul class="list-disc ml-6 text-sm text-slate-700 mt-1 space-y-1">
-                            @foreach($exp->achievements as $item)
-                                <li>{{ $item }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    @if($exp->tools_used && count($exp->tools_used) > 0)
-                        <h4 class="font-semibold mt-3 text-sm">Tools Used</h4>
-                        <div class="flex flex-wrap gap-2 mt-1">
-                            @foreach($exp->tools_used as $tool)
-                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs">{{ $tool }}</span>
-                            @endforeach
-                        </div>
+                    @if($exp->is_current)
+                    <span style="background:#ecfdf5;color:#059669;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;flex-shrink:0;">Current</span>
                     @endif
                 </div>
+                <p style="font-size:12px;color:#94a3b8;margin-top:5px;">
+                    {{ $exp->start_date ?? '-' }} → {{ $exp->end_date ?? '-' }}
+                    @if($exp->duration_months) · {{ $exp->duration_months }} months @endif
+                    @if($exp->employment_type) · {{ $exp->employment_type }} @endif
+                </p>
+
+                @if($exp->responsibilities && count($exp->responsibilities) > 0)
+                <p style="font-size:11.5px;font-weight:600;color:#475569;margin:10px 0 5px;">Responsibilities</p>
+                <ul style="margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:3px;">
+                    @foreach($exp->responsibilities as $item)
+                    <li style="font-size:13px;color:#475569;line-height:1.55;">{{ $item }}</li>
+                    @endforeach
+                </ul>
+                @endif
+
+                @if($exp->tools_used && count($exp->tools_used) > 0)
+                <p style="font-size:11.5px;font-weight:600;color:#475569;margin:10px 0 6px;">Tools Used</p>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                    @foreach($exp->tools_used as $tool)
+                    <span style="background:#f1f5f9;color:#374151;padding:3px 9px;border-radius:99px;font-size:11.5px;">{{ $tool }}</span>
+                    @endforeach
+                </div>
+                @endif
+            </div>
             @empty
-                <p class="text-slate-500">No work experience detected.</p>
+            <p style="font-size:13px;color:#94a3b8;">No work experience detected.</p>
             @endforelse
         </div>
 
         {{-- Education --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Education
-                <span class="text-sm font-normal text-slate-500">({{ $candidate->educations->count() }} entries)</span>
-            </h2>
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;">Education</p>
+                <span style="font-size:11px;color:#94a3b8;">{{ $candidate->educations->count() }} entries</span>
+            </div>
 
             @forelse($candidate->educations as $edu)
-                <div class="border-b border-slate-200 pb-4 mb-4">
-                    <h3 class="font-bold">{{ $edu->institution ?? 'Institution not detected' }}</h3>
-                    <p class="text-slate-700">{{ $edu->degree ?? '-' }}
-                        @if($edu->field_of_study) · {{ $edu->field_of_study }} @endif
-                    </p>
-                    <p class="text-sm text-slate-500">
-                        @if($edu->start_year || $edu->end_year)
-                            {{ $edu->start_year ?? '-' }} – {{ $edu->end_year ?? '-' }}
-                        @endif
-                        @if($edu->cgpa) · CGPA: {{ $edu->cgpa }} @endif
-                    </p>
-                    @if($edu->relevant_coursework && count($edu->relevant_coursework) > 0)
-                        <div class="flex flex-wrap gap-1 mt-2">
-                            @foreach($edu->relevant_coursework as $course)
-                                <span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs">{{ $course }}</span>
-                            @endforeach
-                        </div>
-                    @endif
+            <div style="padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid #f1f5f9;">
+                <h3 style="font-size:14px;font-weight:600;color:#0f172a;">{{ $edu->institution ?? 'Institution not detected' }}</h3>
+                <p style="font-size:13px;color:#475569;margin-top:2px;">{{ $edu->degree ?? '' }}@if($edu->field_of_study) · {{ $edu->field_of_study }}@endif</p>
+                <p style="font-size:12px;color:#94a3b8;margin-top:3px;">
+                    @if($edu->start_year || $edu->end_year){{ $edu->start_year ?? '-' }} – {{ $edu->end_year ?? '-' }}@endif
+                    @if($edu->cgpa) · CGPA: {{ $edu->cgpa }}@endif
+                </p>
+                @if($edu->relevant_coursework && count($edu->relevant_coursework) > 0)
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+                    @foreach($edu->relevant_coursework as $course)
+                    <span style="background:#f5f3ff;color:#5b21b6;padding:2px 8px;border-radius:6px;font-size:11.5px;">{{ $course }}</span>
+                    @endforeach
                 </div>
+                @endif
+            </div>
             @empty
-                <p class="text-slate-500">No education detected.</p>
+            <p style="font-size:13px;color:#94a3b8;">No education detected.</p>
             @endforelse
         </div>
 
         {{-- Skills --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Skills
-                <span class="text-sm font-normal text-slate-500">({{ $candidate->skills->count() }} total)</span>
-            </h2>
-
-            @php
-                $grouped = $candidate->skills->groupBy('category');
-            @endphp
-
-            @if($grouped->count() > 0)
-                @foreach($grouped as $category => $skills)
-                    <div class="mb-4">
-                        <h3 class="font-semibold text-sm text-slate-700 mb-2 capitalize">
-                            {{ str_replace('_', ' ', $category) }}
-                        </h3>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($skills as $skill)
-                                <span class="bg-slate-100 text-slate-800 px-3 py-1 rounded-full text-sm">
-                                    {{ $skill->skill }}
-                                </span>
-                            @endforeach
-                        </div>
-                    </div>
-                @endforeach
-            @else
-                <p class="text-slate-500">No skills detected.</p>
-            @endif
+        @if($candidate->skills->count())
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;">Skills</p>
+                <span style="font-size:11px;color:#94a3b8;">{{ $candidate->skills->count() }} total</span>
+            </div>
+            @php $grouped = $candidate->skills->groupBy('category'); @endphp
+            @foreach($grouped as $category => $skills)
+            <div style="margin-bottom:12px;">
+                <p style="font-size:11.5px;font-weight:600;color:#64748b;margin-bottom:7px;text-transform:capitalize;">{{ str_replace('_', ' ', $category) }}</p>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                    @foreach($skills as $skill)
+                    <span style="background:#f1f5f9;color:#374151;padding:4px 10px;border-radius:99px;font-size:12.5px;">{{ $skill->skill }}</span>
+                    @endforeach
+                </div>
+            </div>
+            @endforeach
         </div>
+        @endif
 
         {{-- Projects --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Projects</h2>
-
-            @forelse($candidate->projects as $proj)
-                <div class="border-b border-slate-200 pb-4 mb-4">
-                    <h3 class="font-bold">{{ $proj->project_name ?? 'Project' }}
-                        @if($proj->project_type)
-                            <span class="text-sm font-normal text-slate-500">({{ $proj->project_type }})</span>
-                        @endif
-                    </h3>
-                    @if($proj->role) <p class="text-sm text-slate-600">Role: {{ $proj->role }}</p> @endif
-                    <p class="text-slate-700 text-sm mt-1">{{ $proj->description ?? '-' }}</p>
-                    @if($proj->outcome) <p class="text-sm text-slate-600 mt-1">Outcome: {{ $proj->outcome }}</p> @endif
-                    @if($proj->technologies && count($proj->technologies) > 0)
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            @foreach($proj->technologies as $tech)
-                                <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">{{ $tech }}</span>
-                            @endforeach
-                        </div>
-                    @endif
+        @if($candidate->projects->count())
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:1.25rem;">Projects</p>
+            @foreach($candidate->projects as $proj)
+            <div style="padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <h3 style="font-size:14px;font-weight:600;color:#0f172a;">{{ $proj->project_name ?? 'Project' }}</h3>
+                    @if($proj->project_type)<span style="font-size:11px;color:#94a3b8;">{{ $proj->project_type }}</span>@endif
                 </div>
-            @empty
-                <p class="text-slate-500">No projects detected.</p>
-            @endforelse
+                @if($proj->role)<p style="font-size:12px;color:#64748b;margin-top:2px;">Role: {{ $proj->role }}</p>@endif
+                @if($proj->description)<p style="font-size:13px;color:#475569;margin-top:5px;line-height:1.55;">{{ $proj->description }}</p>@endif
+                @if($proj->technologies && count($proj->technologies) > 0)
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+                    @foreach($proj->technologies as $tech)
+                    <span style="background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:99px;font-size:11.5px;">{{ $tech }}</span>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+            @endforeach
         </div>
+        @endif
 
         {{-- Certifications --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Certifications</h2>
-
-            @forelse($candidate->certifications as $cert)
-                <div class="border-b border-slate-200 pb-3 mb-3">
-                    <p class="font-semibold">{{ $cert->name ?? '-' }}</p>
-                    <p class="text-sm text-slate-500">{{ $cert->issuer ?? '' }}
-                        @if($cert->date_issued) · {{ $cert->date_issued }} @endif
-                    </p>
-                    @if($cert->credential_link)
-                        <a href="{{ $cert->credential_link }}" class="text-xs text-blue-600" target="_blank">View credential</a>
-                    @endif
-                </div>
-            @empty
-                <p class="text-slate-500">No certifications detected.</p>
-            @endforelse
+        @if($candidate->certifications->count())
+        <div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:1.5rem;">
+            <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:1.25rem;">Certifications</p>
+            @foreach($candidate->certifications as $cert)
+            <div style="padding-bottom:.875rem;margin-bottom:.875rem;border-bottom:1px solid #f1f5f9;">
+                <p style="font-size:13.5px;font-weight:600;color:#0f172a;">{{ $cert->name ?? '-' }}</p>
+                <p style="font-size:12px;color:#94a3b8;margin-top:2px;">{{ $cert->issuer ?? '' }}@if($cert->date_issued) · {{ $cert->date_issued }}@endif</p>
+                @if($cert->credential_link)<a href="{{ $cert->credential_link }}" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">View credential →</a>@endif
+            </div>
+            @endforeach
         </div>
+        @endif
 
-        {{-- Achievements --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-4">Achievements</h2>
+        {{-- Raw Text (collapsible) --}}
+        <details style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;overflow:hidden;">
+            <summary style="padding:1rem 1.5rem;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;letter-spacing:.04em;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+                <span>Raw Extracted Text</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 4L6 8L10 4"/></svg>
+            </summary>
+            <div style="padding:0 1.5rem 1.5rem;">
+                <pre style="background:#f8f9fc;border:1px solid #e4e9f0;padding:14px;border-radius:8px;font-size:11.5px;overflow:auto;max-height:20rem;white-space:pre-wrap;color:#374151;">{{ $candidate->raw_text ?? 'No raw text available.' }}</pre>
+            </div>
+        </details>
 
-            @forelse($candidate->achievements as $ach)
-                <div class="border-b border-slate-200 pb-3 mb-3">
-                    <p class="font-semibold">{{ $ach->title ?? '-' }}
-                        @if($ach->year) <span class="text-sm font-normal text-slate-500">({{ $ach->year }})</span> @endif
-                    </p>
-                    @if($ach->organization) <p class="text-sm text-slate-500">{{ $ach->organization }}</p> @endif
-                    @if($ach->description) <p class="text-sm text-slate-700">{{ $ach->description }}</p> @endif
-                </div>
-            @empty
-                <p class="text-slate-500">No achievements detected.</p>
-            @endforelse
-        </div>
-
-        {{-- Raw Text --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-2">Raw Extracted Text</h2>
-            <p class="text-xs text-slate-500 mb-3">This is exactly what Python extracted before sending to Qwen. Use this to debug missing fields.</p>
-            <pre class="bg-slate-50 border border-slate-200 p-4 rounded-lg text-xs overflow-auto max-h-96 whitespace-pre-wrap">{{ $candidate->raw_text ?? 'No raw text available.' }}</pre>
-        </div>
-
-        {{-- Parsed JSON --}}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-xl font-bold mb-2">Parsed JSON Debug</h2>
-            <p class="text-xs text-slate-500 mb-3">This is the full JSON returned by Python and stored in MySQL. If fields appear in JSON but not on this page, it is a Blade display issue.</p>
-            <pre class="bg-slate-900 text-green-400 p-4 rounded-lg text-xs overflow-auto max-h-96 whitespace-pre-wrap">{{ json_encode($candidate->parsed_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-        </div>
+        {{-- Debug (collapsible) --}}
+        <details style="background:#f8f9fc;border:1px solid #e4e9f0;border-radius:12px;overflow:hidden;">
+            <summary style="padding:.875rem 1.25rem;font-size:11.5px;font-weight:600;color:#94a3b8;cursor:pointer;list-style:none;">Debug API Links</summary>
+            <div style="padding:.5rem 1.25rem 1rem;display:flex;flex-direction:column;gap:5px;">
+                <a href="/api/candidates/{{ $candidate->id }}" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">Full JSON</a>
+                <a href="/api/candidates/{{ $candidate->id }}/parsed-json" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">Parsed JSON</a>
+                <a href="/api/candidates/{{ $candidate->id }}/raw-text" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">Raw Text</a>
+                <a href="/api/candidates/{{ $candidate->id }}/experiences" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">Experiences</a>
+                <a href="/api/candidates/{{ $candidate->id }}/skills" target="_blank" style="font-size:12px;color:#1d4ed8;text-decoration:none;">Skills</a>
+            </div>
+        </details>
 
     </div>
 </div>

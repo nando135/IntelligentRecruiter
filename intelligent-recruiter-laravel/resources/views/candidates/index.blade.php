@@ -100,7 +100,7 @@
 <div class="toolbar">
     <div>
         <button type="submit" form="bulk-approve-form" class="btn-approve"
-                onclick="return confirm('Approve selected candidates and queue confirmation emails?')">
+                onclick="return confirm('Approve selected candidates?')">
             ✓ Approve selected
         </button>
     </div>
@@ -121,7 +121,6 @@
                 <th>Score</th>
                 <th>Match</th>
                 <th>Approval</th>
-                <th>Email</th>
                 <th>CV status</th>
                 <th>Action</th>
             </tr>
@@ -172,17 +171,6 @@
                     @endif
                 </td>
                 <td>
-                    @if($candidate->email_status === 'sent')
-                        <span class="badge badge-green">sent</span>
-                    @elseif($candidate->email_status === 'queued')
-                        <span class="badge badge-amber">queued</span>
-                    @elseif($candidate->email_status === 'failed')
-                        <span class="badge badge-red">failed</span>
-                    @else
-                        <span class="badge badge-gray">not sent</span>
-                    @endif
-                </td>
-                <td>
                     @if($candidate->parser_status === 'success')
                         <span class="badge badge-green">success</span>
                     @elseif($candidate->parser_status === 'partial')
@@ -202,7 +190,7 @@
                                 <input type="hidden" name="approval_source" value="hr_preference">
                                 <input type="hidden" name="approval_note" value="Approved by HR from candidate database.">
                                 <button type="submit" class="act-approve-btn"
-                                        onclick="return confirm('Approve this candidate and queue confirmation email?')">
+                                        onclick="return confirm('Approve this candidate?')">
                                     Approve
                                 </button>
                             </form>
@@ -214,7 +202,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="12" style="padding:3rem;text-align:center;color:#94a3b8">
+                <td colspan="11" style="padding:3rem;text-align:center;color:#94a3b8">
                     No candidates yet. Upload a CV to begin.
                 </td>
             </tr>

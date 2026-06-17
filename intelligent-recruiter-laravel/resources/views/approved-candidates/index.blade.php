@@ -1,158 +1,93 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mb-6 flex justify-between items-center">
-    <div>
-        <h1 class="text-3xl font-bold">Approved Candidates</h1>
-        <p class="text-slate-600">Candidates approved by HR appear here.</p>
-    </div>
 
-    <a href="{{ route('leaderboard.index') }}" class="bg-blue-700 text-white px-5 py-3 rounded-lg font-medium">
-        Back to Leaderboard
+{{-- Header --}}
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;gap:1rem;">
+    <div>
+        <h1 style="font-size:1.35rem;font-weight:700;color:#0f172a;letter-spacing:-.02em;">Approved Candidates</h1>
+        <p style="font-size:13px;color:#94a3b8;margin-top:3px;">Candidates approved by HR appear here.</p>
+    </div>
+    <a href="{{ route('leaderboard.index') }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#fff;border:1px solid #e4e9f0;border-radius:8px;font-size:13px;font-weight:500;color:#475569;text-decoration:none;white-space:nowrap;transition:border-color .12s,color .12s;" onmouseover="this.style.borderColor='#cbd5e1';this.style.color='#0f172a'" onmouseout="this.style.borderColor='#e4e9f0';this.style.color='#475569'">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="3" height="5" rx="1"/><rect x="6.5" y="5" width="3" height="9" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg>
+        Leaderboard
     </a>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
-    <form method="GET" action="{{ route('approved-candidates.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Search</label>
-            <input type="text" name="search" value="{{ $search }}"
-                   placeholder="Name or email"
-                   class="w-full border border-slate-300 rounded-lg px-3 py-2">
-        </div>
+{{-- Filters --}}
+<form method="GET" action="{{ route('approved-candidates.index') }}" style="display:flex;align-items:flex-end;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <div style="flex:1;min-width:180px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Search</label>
+        <input type="text" name="search" value="{{ $search }}" placeholder="Name or email…"
+            style="width:100%;padding:8px 12px;border:1px solid #e4e9f0;border-radius:8px;font-size:13px;color:#0f172a;background:#fff;outline:none;transition:border-color .15s;"
+            onfocus="this.style.borderColor='#1d4ed8'" onblur="this.style.borderColor='#e4e9f0'">
+    </div>
 
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <select name="category" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-                <option value="">All Categories</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category }}" {{ $selectedCategory === $category ? 'selected' : '' }}>
-                        {{ $category }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+    <div style="min-width:160px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Category</label>
+        <select name="category" style="width:100%;padding:8px 12px;border:1px solid #e4e9f0;border-radius:8px;font-size:13px;color:#0f172a;background:#fff;outline:none;">
+            <option value="">All Categories</option>
+            @foreach($categories as $category)
+                <option value="{{ $category }}" {{ $selectedCategory === $category ? 'selected' : '' }}>{{ $category }}</option>
+            @endforeach
+        </select>
+    </div>
 
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Email Status</label>
-            <select name="email_status" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-                <option value="">All Statuses</option>
-                @foreach($emailStatuses as $status)
-                    <option value="{{ $status }}" {{ $selectedEmailStatus === $status ? 'selected' : '' }}>
-                        {{ ucfirst(str_replace('_', ' ', $status)) }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+    <div style="display:flex;gap:6px;padding-bottom:1px;">
+        <button type="submit" style="padding:8px 16px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Filter</button>
+        <a href="{{ route('approved-candidates.index') }}" style="padding:8px 14px;background:#fff;border:1px solid #e4e9f0;border-radius:8px;font-size:13px;color:#64748b;text-decoration:none;font-weight:500;">Reset</a>
+    </div>
+</form>
 
-        <div class="flex items-end gap-2">
-            <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded-lg">
-                Filter
-            </button>
-
-            <a href="{{ route('approved-candidates.index') }}" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg">
-                Reset
-            </a>
-        </div>
-    </form>
-</div>
-
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-    <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-                <th class="text-left px-4 py-3">Candidate</th>
-                <th class="text-left px-4 py-3">Email</th>
-                <th class="text-left px-4 py-3">Category</th>
-                <th class="text-left px-4 py-3">Rank Snapshot</th>
-                <th class="text-left px-4 py-3">Score Snapshot</th>
-                <th class="text-left px-4 py-3">Match Snapshot</th>
-                <th class="text-left px-4 py-3">Approved At</th>
-                <th class="text-left px-4 py-3">Email Status</th>
-                <th class="text-left px-4 py-3">Template</th>
-                <th class="text-left px-4 py-3">Action</th>
+{{-- Table --}}
+<div style="background:#fff;border:1px solid #e4e9f0;border-radius:12px;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+            <tr style="border-bottom:1px solid #e4e9f0;">
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Candidate</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Email</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Category</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Rank</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Score</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Match</th>
+                <th style="text-align:left;padding:11px 16px;font-size:10.5px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;">Approved</th>
+                <th style="padding:11px 16px;"></th>
             </tr>
         </thead>
-
         <tbody>
-            @forelse($approvedCandidates as $approvedCandidate)
-                <tr class="border-t border-slate-200 hover:bg-slate-50">
-                    <td class="px-4 py-3 font-medium">
-                        {{ $approvedCandidate->full_name_snapshot ?? 'Unknown' }}
-                    </td>
-
-                    <td class="px-4 py-3 text-slate-500">
-                        {{ $approvedCandidate->email_snapshot ?? '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        @if($approvedCandidate->candidate_category_snapshot)
-                            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs">
-                                {{ $approvedCandidate->candidate_category_snapshot }}
-                            </span>
-                        @else
-                            -
-                        @endif
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {{ $approvedCandidate->leaderboard_rank_snapshot ? '#' . $approvedCandidate->leaderboard_rank_snapshot : '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {{ $approvedCandidate->leaderboard_score_snapshot !== null ? number_format($approvedCandidate->leaderboard_score_snapshot, 2) : '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {{ $approvedCandidate->match_percentage_snapshot !== null ? number_format($approvedCandidate->match_percentage_snapshot, 2) . '%' : '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {{ $approvedCandidate->approved_at ? $approvedCandidate->approved_at->format('d M Y, h:i A') : '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        @if($approvedCandidate->email_status === 'sent')
-                            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">sent</span>
-                        @elseif($approvedCandidate->email_status === 'queued')
-                            <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs">queued</span>
-                        @elseif($approvedCandidate->email_status === 'failed')
-                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs">failed</span>
-                        @else
-                            <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-xs">not sent</span>
-                        @endif
-
-                        @if($approvedCandidate->email_error)
-                            <div class="text-xs text-red-600 mt-1">
-                                {{ $approvedCandidate->email_error }}
-                            </div>
-                        @endif
-                    </td>
-
-                    <td class="px-4 py-3">
-                        {{ $approvedCandidate->emailTemplate->name ?? '-' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                        @if($approvedCandidate->candidate)
-                            <a href="{{ route('candidates.show', $approvedCandidate->candidate) }}" class="text-blue-700 font-medium">
-                                View Candidate
-                            </a>
-                        @else
-                            <span class="text-slate-400">Candidate deleted</span>
-                        @endif
-                    </td>
-                </tr>
+            @forelse($approvedCandidates as $ac)
+            <tr style="border-bottom:1px solid #f1f5f9;transition:background .1s;" onmouseover="this.style.background='#f8f9fc'" onmouseout="this.style.background='transparent'">
+                <td style="padding:13px 16px;font-weight:600;color:#0f172a;">{{ $ac->full_name_snapshot ?? 'Unknown' }}</td>
+                <td style="padding:13px 16px;color:#64748b;">{{ $ac->email_snapshot ?? '-' }}</td>
+                <td style="padding:13px 16px;">
+                    @if($ac->candidate_category_snapshot)
+                        <span style="background:#f1f5f9;color:#374151;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:500;">{{ $ac->candidate_category_snapshot }}</span>
+                    @else -
+                    @endif
+                </td>
+                <td style="padding:13px 16px;color:#0f172a;font-weight:500;">{{ $ac->leaderboard_rank_snapshot ? '#'.$ac->leaderboard_rank_snapshot : '-' }}</td>
+                <td style="padding:13px 16px;color:#0f172a;">{{ $ac->leaderboard_score_snapshot !== null ? number_format($ac->leaderboard_score_snapshot, 1) : '-' }}</td>
+                <td style="padding:13px 16px;color:#0f172a;">{{ $ac->match_percentage_snapshot !== null ? number_format($ac->match_percentage_snapshot, 1).'%' : '-' }}</td>
+                <td style="padding:13px 16px;color:#94a3b8;font-size:12px;">{{ $ac->approved_at ? $ac->approved_at->format('d M Y, h:i A') : '-' }}</td>
+                <td style="padding:13px 16px;text-align:right;">
+                    @if($ac->candidate)
+                        <a href="{{ route('candidates.show', $ac->candidate) }}" style="font-size:12.5px;font-weight:600;color:#1d4ed8;text-decoration:none;">View →</a>
+                    @else
+                        <span style="font-size:12px;color:#cbd5e1;">Deleted</span>
+                    @endif
+                </td>
+            </tr>
             @empty
-                <tr>
-                    <td colspan="10" class="px-6 py-8 text-center text-slate-500">
-                        No approved candidates yet.
-                    </td>
-                </tr>
+            <tr>
+                <td colspan="8" style="padding:3rem;text-align:center;color:#94a3b8;font-size:13px;">No approved candidates yet.</td>
+            </tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<div class="mt-6">{{ $approvedCandidates->links() }}</div>
+@if($approvedCandidates->hasPages())
+<div style="margin-top:1.25rem;">{{ $approvedCandidates->links() }}</div>
+@endif
+
 @endsection

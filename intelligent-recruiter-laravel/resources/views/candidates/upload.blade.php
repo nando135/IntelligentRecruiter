@@ -22,6 +22,11 @@
 .btn-submit{display:inline-flex;align-items:center;gap:8px;background:#185FA5;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;margin-top:1.75rem}
 .btn-submit:hover{background:#0C447C}
 .btn-submit:disabled{opacity:0.5;cursor:not-allowed}
+.progress-wrap{margin-top:1.25rem;display:none}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:6px}
+.progress-label .progress-status{font-weight:500;color:#185FA5}
+.progress-track{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#185FA5,#38BDF8);border-radius:999px;transition:width 0.4s ease}
 </style>
 
 <div class="upload-wrap">
@@ -56,17 +61,31 @@
                 <i class="ti ti-scan" aria-hidden="true"></i>
                 Scan CV and save
             </button>
+
+            <div class="progress-wrap" id="progress-wrap">
+                <div class="progress-label">
+                    <span class="progress-status" id="progress-status">Uploading...</span>
+                    <span id="progress-pct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </div>
         </form>
     </div>
 </div>
 
 <script>
-const input    = document.getElementById('file-input');
-const dropzone = document.getElementById('dropzone');
-const chosen   = document.getElementById('file-chosen');
-const fileName = document.getElementById('file-name');
-const clearBtn = document.getElementById('file-clear');
-const submit   = document.getElementById('btn-submit');
+const input       = document.getElementById('file-input');
+const dropzone    = document.getElementById('dropzone');
+const chosen      = document.getElementById('file-chosen');
+const fileName    = document.getElementById('file-name');
+const clearBtn    = document.getElementById('file-clear');
+const submit      = document.getElementById('btn-submit');
+const progressWrap= document.getElementById('progress-wrap');
+const progressBar = document.getElementById('progress-bar');
+const progressPct = document.getElementById('progress-pct');
+const progressSts = document.getElementById('progress-status');
 
 function showFile(file) {
     if (!file) return;
@@ -80,6 +99,12 @@ function clearFile() {
     chosen.style.display = 'none';
     fileName.textContent = '';
     submit.disabled = true;
+}
+
+function setProgress(pct, label) {
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = Math.round(pct) + '%';
+    if (label) progressSts.textContent = label;
 }
 
 input.addEventListener('change', () => showFile(input.files[0]));
@@ -97,6 +122,65 @@ dropzone.addEventListener('drop', e => {
         input.files = dt.files;
         showFile(file);
     }
+});
+
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Lock UI
+    submit.disabled = true;
+    clearBtn.disabled = true;
+    progressWrap.style.display = 'block';
+    setProgress(0, 'Uploading...');
+
+    const formData = new FormData(this);
+    const xhr = new XMLHttpRequest();
+    let processingInterval = null;
+
+    // Stage 1: real upload progress (0 → 30%)
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const pct = (e.loaded / e.total) * 30;
+            setProgress(pct, 'Uploading...');
+        }
+    };
+
+    xhr.upload.onload = function() {
+        // Stage 2: AI processing animation (30 → 95%)
+        setProgress(30, 'Scanning CV...');
+        let current = 30;
+        processingInterval = setInterval(() => {
+            // Slow down as it gets closer to 95
+            const step = (95 - current) * 0.04;
+            current = Math.min(current + Math.max(step, 0.3), 95);
+            const labels = [
+                { at: 30, text: 'Scanning CV...' },
+                { at: 50, text: 'Extracting information...' },
+                { at: 70, text: 'Classifying candidate...' },
+                { at: 88, text: 'Saving to database...' },
+            ];
+            const label = [...labels].reverse().find(l => current >= l.at);
+            setProgress(current, label ? label.text : 'Processing...');
+        }, 400);
+    };
+
+    // Stage 3: done → 100% then redirect
+    xhr.onload = function() {
+        clearInterval(processingInterval);
+        setProgress(100, 'Done!');
+        setTimeout(() => { window.location.href = xhr.responseURL; }, 600);
+    };
+
+    xhr.onerror = function() {
+        clearInterval(processingInterval);
+        progressSts.textContent = 'Upload failed. Please try again.';
+        progressSts.style.color = '#dc2626';
+        submit.disabled = false;
+        clearBtn.disabled = false;
+    };
+
+    xhr.open('POST', this.action);
+    xhr.send(formData);
 });
 </script>
 @endsection

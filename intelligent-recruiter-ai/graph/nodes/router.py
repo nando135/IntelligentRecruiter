@@ -1,11 +1,16 @@
-import os
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
 from graph.state import GraphState
 from graph.tools.prompts import ROUTER
+from graph.llm import get_llm
 
 _VALID = {"compare", "candidate_detail", "job_filter", "chat", "end"}
 
+_ACTION_KEYWORDS = {
+    "send email", "send an email", "email to", "send to",
+    "delete", "remove", "update", "create", "add candidate",
+    "approve", "reject", "notify", "schedule", "book", "invite",
+    "shortlist", "move to", "export", "download", "generate report",
+}
 _CHAT_KEYWORDS = {
     "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
     "thank you", "thanks", "thank", "thx", "ty",
@@ -38,11 +43,7 @@ _JOB_KEYWORDS = {
 
 
 def _llm():
-    return ChatOllama(
-        model=os.getenv("OLLAMA_MODEL", "llama3.2:1b"),
-        base_url=os.getenv("OLLAMA_URL", "http://127.0.0.1:11434"),
-        temperature=0,
-    )
+    return get_llm(temperature=0)
 
 
 def _extract_text(content) -> str:
@@ -56,6 +57,10 @@ def _extract_text(content) -> str:
 
 def _keyword_classify(text: str) -> str | None:
     lower = text.lower().strip()
+
+    # Action requests are always out-of-scope
+    if any(k in lower for k in _ACTION_KEYWORDS):
+        return "end"
 
     if lower in _CHAT_KEYWORDS or any(lower.startswith(k + " ") or lower == k for k in _CHAT_KEYWORDS):
         return "chat"

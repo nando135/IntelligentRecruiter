@@ -1,18 +1,24 @@
 import os
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.prebuilt import ToolNode
 
 from graph.state import GraphState
 from graph.tools.prompts import OUT_OF_SCOPE
+from graph.tools.candidates import get_candidates_summary, get_candidate_by_name
 from graph.nodes import (
     router_node, route_edge,
-    compare_node, compare_tool_node,
-    detail_node, detail_tool_node,
-    job_filter_node, job_filter_tool_node,
+    compare_node,
+    detail_node,
+    job_filter_node,
     chat_node,
 )
+
+
+compare_tool_node    = ToolNode([get_candidates_summary])
+detail_tool_node     = ToolNode([get_candidate_by_name])
+job_filter_tool_node = ToolNode([get_candidates_summary])
 
 
 def _has_tool_call(state: GraphState) -> str:

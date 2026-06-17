@@ -7,6 +7,7 @@ use App\Models\ChatMessage;
 use App\Models\ChatThread;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -33,6 +34,7 @@ class ChatController extends Controller
             $thread = ChatThread::create([
                 'thread_id' => $threadId,
                 'title'     => 'New chat',
+                'user_id'   => Auth::id(),
             ]);
 
             return response()->json([
@@ -56,27 +58,58 @@ class ChatController extends Controller
         $threadId = $request->input('thread_id');
         $message  = $request->input('message');
 
-        $thread = ChatThread::where('thread_id', $threadId)->firstOrFail();
+        $thread = ChatThread::where('thread_id', $threadId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-        $humanMsg = ChatMessage::create([
+        ChatMessage::create([
             'chat_thread_id' => $thread->id,
             'thread_id'      => $threadId,
             'role'           => 'human',
             'content'        => $message,
         ]);
 
-        ProcessChatMessage::dispatch($threadId, $message, $thread->id);
+        // Call Python AI synchronously and return response directly
+        try {
+            $response = Http::timeout(115)->post($this->pythonUrl . '/chat', [
+                'thread_id' => $threadId,
+                'message'   => $message,
+            ]);
 
-        return response()->json([
-            'status'     => 'queued',
-            'thread_id'  => $threadId,
-            'message_id' => $humanMsg->id,
-        ]);
+            if (! $response->successful()) {
+                return response()->json(['error' => 'AI service error.'], 502);
+            }
+
+            $reply = $response->json('reply') ?? 'No response generated.';
+
+            $aiMsg = ChatMessage::create([
+                'chat_thread_id' => $thread->id,
+                'thread_id'      => $threadId,
+                'role'           => 'ai',
+                'content'        => $reply,
+            ]);
+
+            if ($thread->title === 'New chat') {
+                $thread->update(['title' => substr($message, 0, 60)]);
+            }
+
+            return response()->json([
+                'status'   => 'ok',
+                'reply'    => $reply,
+                'msg_id'   => $aiMsg->id,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Connection error: ' . $e->getMessage()], 503);
+        }
     }
 
     public function history(string $threadId): JsonResponse
     {
-        $thread   = ChatThread::where('thread_id', $threadId)->firstOrFail();
+        $thread = ChatThread::where('thread_id', $threadId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
         $messages = $thread->messages()->get(['role', 'content', 'created_at']);
 
         return response()->json([
@@ -88,7 +121,8 @@ class ChatController extends Controller
 
     public function threads(): JsonResponse
     {
-        $threads = ChatThread::orderByDesc('updated_at')
+        $threads = ChatThread::where('user_id', Auth::id())
+            ->orderByDesc('updated_at')
             ->select(['id', 'thread_id', 'title', 'created_at', 'updated_at'])
             ->get();
 
@@ -97,7 +131,10 @@ class ChatController extends Controller
 
     public function deleteThread(string $threadId): JsonResponse
     {
-        $thread = ChatThread::where('thread_id', $threadId)->first();
+        $thread = ChatThread::where('thread_id', $threadId)
+            ->where('user_id', Auth::id())
+            ->first();
+
         if ($thread) {
             $thread->delete();
         }

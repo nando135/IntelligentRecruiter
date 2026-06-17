@@ -12,27 +12,9 @@ from datetime import datetime
 
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain_ollama import ChatOllama
-from datetime import date as _date
 
 from db import get_conn
-
-# ─── CV Scan Rate Limit (10/day) ─────────────────────────────────────────────
-_DAILY_SCAN_LIMIT = 10
-_scan_count: int = 0
-_scan_date: _date = _date.today()
-
-def _check_scan_limit():
-    global _scan_count, _scan_date
-    today = _date.today()
-    if today != _scan_date:
-        _scan_count = 0
-        _scan_date = today
-    if _scan_count >= _DAILY_SCAN_LIMIT:
-        return False
-    _scan_count += 1
-    return True
 from graph.runner import run_chat, clear_thread
-from cv_parser_gemini import parse_cv_gemini
 
 load_dotenv()
 
@@ -1783,7 +1765,7 @@ def health_check():
         "ai_provider":  "ollama",
         "ollama_url":   OLLAMA_URL,
         "ollama_model": OLLAMA_MODEL,
-        "mode":         "llamaindex + gemini structured extraction",
+        "mode":         "regex-first + llm-assist",
     }
 
 @app.post("/rank-candidates")
@@ -1860,12 +1842,6 @@ def rank_candidates_by_job(req: JobRankCandidatesRequest):
 
 @app.post("/parse-cv")
 async def parse_cv(file: UploadFile = File(...)):
-    if not _check_scan_limit():
-        return JSONResponse(status_code=429, content={
-            "status": "error",
-            "message": f"Daily CV scan limit of {_DAILY_SCAN_LIMIT} reached. Resets at midnight.",
-        })
-
     suffix = os.path.splitext(file.filename)[1].lower()
 
     if suffix not in [".pdf", ".docx"]:
@@ -1879,7 +1855,27 @@ async def parse_cv(file: UploadFile = File(...)):
         temp_path = tmp.name
 
     try:
-        return parse_cv_gemini(temp_path, file.filename)
+        try:
+            documents = load_document(temp_path, suffix)
+        except Exception as e:
+            return JSONResponse(status_code=200, content=empty_response(
+                file.filename, "", f"Could not load document: {str(e)}"
+            ))
+
+        if not documents:
+            return JSONResponse(status_code=200, content=empty_response(
+                file.filename, "", "Document loaded but no pages found."
+            ))
+
+        raw_text = get_raw_text(documents)
+
+        if not raw_text.strip():
+            return JSONResponse(status_code=200, content=empty_response(
+                file.filename, "", "No readable text found in CV."
+            ))
+
+        return build_result(file.filename, raw_text)
+
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

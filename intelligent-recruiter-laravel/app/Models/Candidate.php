@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Candidate extends Model
 {
     protected $fillable = [
+        'user_id',
         'full_name',
         'email',
         'phone',
@@ -55,6 +57,11 @@ class Candidate extends Model
         'approved_at'               => 'datetime',
         'email_sent_at'             => 'datetime',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function experiences()
     {

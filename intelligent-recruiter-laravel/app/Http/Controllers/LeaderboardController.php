@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Candidate;
 use App\Services\CandidateRankingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LeaderboardController extends Controller
 {
@@ -38,6 +39,7 @@ class LeaderboardController extends Controller
                 'educations',
                 'certifications',
             ])
+            ->where('user_id', Auth::id())
             ->where(function ($query) {
                 $query->whereNull('approval_status')
                     ->orWhere('approval_status', '!=', 'approved');
@@ -76,6 +78,7 @@ class LeaderboardController extends Controller
         }
 
         $query = Candidate::with('skills')
+            ->where('user_id', Auth::id())
             ->whereNotNull('candidate_category')
             ->where('candidate_category', '!=', '')
             ->orderBy('candidate_category')

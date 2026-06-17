@@ -1,8 +1,6 @@
 {{--
     Floating Recruiter Chatbot Widget — WebSocket powered via Laravel Reverb
-    Styled to match the Intelligent Recruiter design system (app.blade.php).
-    Add before </body> in layouts/app.blade.php:
-        @include('chat.widget')
+    Two-column layout: persistent thread sidebar + chat area (Intercom-style)
 --}}
 
 <style>
@@ -11,8 +9,8 @@
     position: fixed;
     bottom: 28px;
     right: 28px;
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: #1d4ed8;
     color: #fff;
@@ -30,25 +28,25 @@
     transform: scale(1.08) translateY(-1px);
     box-shadow: 0 8px 24px rgba(29,78,216,.35);
 }
-#chat-fab svg { width: 22px; height: 22px; }
+#chat-fab svg { width: 20px; height: 20px; }
 
 /* ── PANEL ── */
 #chat-panel {
     position: fixed;
-    bottom: 94px;
+    bottom: 90px;
     right: 28px;
-    width: 400px;
+    width: 620px;
     max-width: calc(100vw - 48px);
     height: 580px;
     max-height: calc(100vh - 120px);
     background: #fff;
     border: 1px solid #e4e9f0;
-    border-radius: 16px;
+    border-radius: 14px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     z-index: 8999;
     overflow: hidden;
-    box-shadow: 0 12px 48px rgba(15,22,35,.12), 0 2px 8px rgba(15,22,35,.06);
+    box-shadow: 0 16px 48px rgba(15,22,35,.13), 0 2px 8px rgba(15,22,35,.06);
     transition: opacity .2s ease, transform .2s cubic-bezier(.34,1.2,.64,1);
 }
 #chat-panel.hidden {
@@ -57,107 +55,81 @@
     transform: translateY(14px) scale(0.98);
 }
 
-/* ── HEADER ── */
-#chat-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 14px;
-    height: 54px;
-    background: #1d4ed8;
+/* ── LEFT SIDEBAR ── */
+#chat-sidebar {
+    width: 200px;
     flex-shrink: 0;
-}
-
-#chat-header-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: #fff;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    letter-spacing: 0.01em;
-}
-
-#ws-status {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.35);
-    flex-shrink: 0;
-    transition: background .3s;
-}
-#ws-status.connected { background: #4ade80; }
-
-.chat-hdr-btn {
-    background: rgba(255,255,255,.12);
-    border: none;
-    color: rgba(255,255,255,.9);
-    border-radius: 7px;
-    padding: 5px 9px;
-    font-size: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background .15s;
-    letter-spacing: 0.01em;
-}
-.chat-hdr-btn:hover { background: rgba(255,255,255,.22); }
-
-/* ── THREAD SIDEBAR ── */
-#thread-sidebar {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #fff;
-    z-index: 10;
     display: flex;
     flex-direction: column;
-    border-radius: 16px;
-    overflow: hidden;
+    border-right: 1px solid #e4e9f0;
+    background: #fafbfc;
 }
-#thread-sidebar.hidden { display: none; }
 
-#thread-sidebar-header {
+#sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px;
-    height: 54px;
-    background: #1d4ed8;
+    padding: 0 12px;
+    height: 52px;
+    border-bottom: 1px solid #e4e9f0;
     flex-shrink: 0;
 }
-#thread-sidebar-header span {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13.5px;
+
+#sidebar-header-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
     font-weight: 600;
-    color: #fff;
-    letter-spacing: 0.01em;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
+
+#sidebar-new-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: #f1f5f9;
+    border: none;
+    color: #475569;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .13s, color .13s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+#sidebar-new-btn:hover { background: #e2e8f0; color: #0f172a; }
 
 #thread-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: 6px 6px;
 }
+
+#thread-list::-webkit-scrollbar { width: 3px; }
+#thread-list::-webkit-scrollbar-track { background: transparent; }
+#thread-list::-webkit-scrollbar-thumb { background: #e4e9f0; border-radius: 99px; }
 
 .thread-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 11px;
-    border-radius: 9px;
+    padding: 8px 9px;
+    border-radius: 8px;
     cursor: pointer;
-    gap: 8px;
-    transition: background .13s;
+    gap: 6px;
+    transition: background .12s;
+    margin-bottom: 1px;
 }
-.thread-item:hover { background: #f8f9fc; }
-.thread-item.active { background: #eff4ff; }
+.thread-item:hover { background: #f1f5f9; }
+.thread-item.active { background: #f1f5f9; }
+.thread-item.active .thread-item-title { color: #0f172a; font-weight: 600; }
 
 .thread-item-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12.5px;
     color: #374151;
     white-space: nowrap;
     overflow: hidden;
@@ -168,31 +140,92 @@
 .thread-del-btn {
     background: none;
     border: none;
-    color: #cbd5e1;
+    color: transparent;
     cursor: pointer;
-    font-size: 14px;
-    padding: 2px 5px;
-    border-radius: 5px;
-    transition: color .13s, background .13s;
-    line-height: 1;
+    font-size: 11px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color .12s, background .12s;
+    flex-shrink: 0;
 }
-.thread-del-btn:hover { color: #ef4444; background: #fef2f2; }
+.thread-item:hover .thread-del-btn { color: #cbd5e1; }
+.thread-del-btn:hover { color: #ef4444 !important; background: #fef2f2; }
 
-#thread-new-btn {
-    margin: 8px;
-    padding: 10px 12px;
-    background: #1d4ed8;
-    color: #fff;
-    border: none;
-    border-radius: 9px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .15s;
-    letter-spacing: 0.01em;
+#sidebar-empty {
+    padding: 20px 12px;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
 }
-#thread-new-btn:hover { background: #1e40af; }
+
+/* ── RIGHT: MAIN CHAT ── */
+#chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+}
+
+/* ── HEADER ── */
+#chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    height: 52px;
+    background: #fff;
+    border-bottom: 1px solid #e4e9f0;
+    flex-shrink: 0;
+}
+
+#chat-header-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f1623;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+}
+
+#ws-status {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e4e9f0;
+    flex-shrink: 0;
+    transition: background .3s;
+}
+#ws-status.connected { background: #4ade80; }
+
+.chat-hdr-btn {
+    background: none;
+    border: 1px solid #e4e9f0;
+    color: #64748b;
+    border-radius: 7px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .13s, border-color .13s, color .13s;
+}
+.chat-hdr-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f1623;
+}
+.chat-hdr-btn svg { width: 14px; height: 14px; }
 
 /* ── MESSAGES AREA ── */
 #chat-messages {
@@ -205,19 +238,18 @@
     background: #f8f9fc;
 }
 
-/* Custom scrollbar inside chat */
 #chat-messages::-webkit-scrollbar { width: 4px; }
 #chat-messages::-webkit-scrollbar-track { background: transparent; }
 #chat-messages::-webkit-scrollbar-thumb { background: #e4e9f0; border-radius: 99px; }
 
-.msg-row { display: flex; flex-direction: column; max-width: 86%; }
+.msg-row { display: flex; flex-direction: column; max-width: 88%; }
 .msg-row.human { align-self: flex-end; align-items: flex-end; }
 .msg-row.ai    { align-self: flex-start; align-items: flex-start; }
 
 .msg-bubble {
     padding: 9px 13px;
     border-radius: 13px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
     line-height: 1.58;
     white-space: pre-wrap;
@@ -237,7 +269,7 @@
 }
 
 .msg-label {
-    font-family: 'DM Sans', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 10.5px;
     color: #94a3b8;
     margin: 3px 4px 0;
@@ -276,7 +308,7 @@
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    padding: 11px 12px;
+    padding: 10px 12px;
     background: #fff;
     border-top: 1px solid #e4e9f0;
     flex-shrink: 0;
@@ -288,7 +320,7 @@
     border-radius: 10px;
     padding: 8px 12px;
     font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     resize: none;
     outline: none;
     min-height: 38px;
@@ -310,8 +342,8 @@
     color: #fff;
     border: none;
     border-radius: 10px;
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -342,15 +374,15 @@
     align-items: center;
     justify-content: center;
     color: #94a3b8;
-    font-family: 'DM Sans', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
-    gap: 12px;
-    padding: 28px 20px;
+    gap: 10px;
+    padding: 24px 16px;
     text-align: center;
     line-height: 1.55;
 }
-#chat-empty svg { opacity: .45; }
-#chat-empty p { max-width: 220px; }
+#chat-empty svg { opacity: .4; }
+#chat-empty p { max-width: 200px; }
 </style>
 
 <!-- FAB -->
@@ -363,63 +395,66 @@
 <!-- PANEL -->
 <div id="chat-panel" class="hidden">
 
-    <!-- Thread sidebar -->
-    <div id="thread-sidebar" class="hidden">
-        <div id="thread-sidebar-header">
-            <span>Chat history</span>
-            <button class="chat-hdr-btn" onclick="closeSidebar()">✕ Close</button>
+    <!-- Left: Thread Sidebar -->
+    <div id="chat-sidebar">
+        <div id="sidebar-header">
+            <span id="sidebar-header-title">Conversations</span>
+            <button id="sidebar-new-btn" onclick="startNewChat()" title="New chat">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/>
+                </svg>
+            </button>
         </div>
-        <div id="thread-list"></div>
-        <button id="thread-new-btn" onclick="startNewChat()">+ New chat</button>
-    </div>
-
-    <!-- Header -->
-    <div id="chat-header">
-        <button class="chat-hdr-btn" onclick="openSidebar()">☰</button>
-        <span id="chat-header-title">Recruiter assistant</span>
-        <div id="ws-status" title="WebSocket disconnected"></div>
-        <button class="chat-hdr-btn" onclick="startNewChat()">+ New</button>
-        <button class="chat-hdr-btn" onclick="chatToggle()">✕</button>
-    </div>
-
-    <!-- Messages -->
-    <div id="chat-messages">
-        <div id="chat-empty">
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <p>Ask me to compare candidates, look up a specific profile, or filter by job requirements.</p>
+        <div id="thread-list">
+            <div id="sidebar-empty">No conversations yet.<br>Start one below.</div>
         </div>
     </div>
 
-    <!-- Input -->
-    <div id="chat-input-area">
-        <textarea id="chat-input" placeholder="Ask about candidates…" rows="1"
-            onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
-        <button id="chat-send" onclick="sendMessage()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-        </button>
+    <!-- Right: Main Chat -->
+    <div id="chat-main">
+
+        <!-- Header -->
+        <div id="chat-header">
+            <span id="chat-header-title">Recruiter assistant</span>
+            <button class="chat-hdr-btn" onclick="chatToggle()" title="Close">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages">
+            <div id="chat-empty">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <p>Ask me to compare candidates, look up a profile, or filter by job role.</p>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div id="chat-input-area">
+            <textarea id="chat-input" placeholder="Ask about candidates…" rows="1"
+                onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+            <button id="chat-send" onclick="sendMessage()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+            </button>
+        </div>
+
     </div>
 </div>
-
-<!-- Pusher JS (used by Laravel Echo for Reverb) -->
-<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
 <script>
 (function () {
     /* ── CONFIG ── */
-    const BASE        = '/api/chat';
-    const REVERB_KEY  = '{{ env("REVERB_APP_KEY") }}';
-    const REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.1") }}';
-    const REVERB_PORT = '{{ env("REVERB_PORT", 8080) }}';
+    const BASE = '/api/chat';
 
     /* ── STATE ── */
     let currentThreadId = null;
-    let currentChannel  = null;
-    let pusher          = null;
     let isSending       = false;
 
     /* ── ELEMENTS ── */
@@ -428,45 +463,17 @@
     const input       = document.getElementById('chat-input');
     const sendBtn     = document.getElementById('chat-send');
     const headerTitle = document.getElementById('chat-header-title');
-    const sidebar     = document.getElementById('thread-sidebar');
     const threadList  = document.getElementById('thread-list');
-    const wsStatus    = document.getElementById('ws-status');
-
-    /* ── PUSHER ── */
-    function initPusher() {
-        if (pusher) return;
-        pusher = new Pusher(REVERB_KEY, {
-            wsHost:            REVERB_HOST,
-            wsPort:            REVERB_PORT,
-            forceTLS:          false,
-            enabledTransports: ['ws'],
-            cluster:           'mt1',
-        });
-        pusher.connection.bind('connected',    () => { wsStatus.classList.add('connected');    wsStatus.title = 'WebSocket connected'; });
-        pusher.connection.bind('disconnected', () => { wsStatus.classList.remove('connected'); wsStatus.title = 'WebSocket disconnected'; });
-    }
-
-    function subscribeToThread(threadId) {
-        if (!pusher) initPusher();
-        if (currentChannel) pusher.unsubscribe('chat.' + (currentThreadId || ''));
-
-        currentChannel = pusher.subscribe('chat.' + threadId);
-        currentChannel.bind('ai.typing',  (data) => { data.typing ? showTyping() : hideTyping(); });
-        currentChannel.bind('ai.message', (data) => { hideTyping(); appendMessage('ai', data.message); setSendDisabled(false); });
-        currentChannel.bind('ai.error',   (data) => { hideTyping(); appendMessage('ai', '⚠️ ' + data.error); setSendDisabled(false); });
-    }
+    const sidebarEmpty = document.getElementById('sidebar-empty');
 
     /* ── PUBLIC API ── */
     window.chatToggle = function () {
         panel.classList.toggle('hidden');
         if (!panel.classList.contains('hidden')) {
-            initPusher();
-            if (!currentThreadId) loadThreads();
+            loadThreads();
+            if (!currentThreadId) input.focus();
         }
     };
-
-    window.openSidebar  = function () { sidebar.classList.remove('hidden'); loadThreads(); };
-    window.closeSidebar = function () { sidebar.classList.add('hidden'); };
 
     window.startNewChat = async function () {
         try {
@@ -478,8 +485,7 @@
             currentThreadId = data.thread_id;
             headerTitle.textContent = 'New chat';
             clearMessages();
-            subscribeToThread(currentThreadId);
-            closeSidebar();
+            loadThreads();
             input.focus();
         } catch (e) {
             alert('Could not create a new chat.');
@@ -499,14 +505,25 @@
         input.value = '';
         autoResize(input);
         setSendDisabled(true);
+        showTyping();
         isSending = true;
 
         try {
-            await fetch(`${BASE}/send`, {
+            const res  = await fetch(`${BASE}/send`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
                 body: JSON.stringify({ thread_id: currentThreadId, message: msg }),
             });
+            const data = await res.json();
+            hideTyping();
+            if (data.reply) {
+                appendMessage('ai', data.reply);
+            } else if (data.error) {
+                appendMessage('ai', '⚠️ ' + data.error);
+            }
+            setSendDisabled(false);
+            isSending = false;
+            loadThreads();
         } catch (e) {
             hideTyping();
             appendMessage('ai', '⚠️ Network error. Please check your connection.');
@@ -518,16 +535,16 @@
     window.loadThread = async function (threadId) {
         try {
             const res  = await fetch(`${BASE}/history/${threadId}`, { headers: { 'X-CSRF-TOKEN': csrf() } });
+            if (!res.ok) { loadThreads(); return; }
             const data = await res.json();
             currentThreadId = threadId;
             headerTitle.textContent = data.title || 'Chat';
             clearMessages();
             (data.messages || []).forEach(m => appendMessage(m.role, m.content));
-            subscribeToThread(threadId);
-            closeSidebar();
+            refreshActiveThread();
             input.focus();
         } catch (e) {
-            alert('Could not load chat history.');
+            loadThreads();
         }
     };
 
@@ -542,20 +559,18 @@
             currentThreadId = null;
             headerTitle.textContent = 'Recruiter assistant';
             clearMessages();
-            if (currentChannel) { pusher.unsubscribe('chat.' + threadId); currentChannel = null; }
         }
         loadThreads();
     };
 
     async function loadThreads() {
-        threadList.innerHTML = '<div style="padding:12px 14px;color:#94a3b8;font-size:13px;font-family:DM Sans,sans-serif;">Loading…</div>';
         try {
             const res     = await fetch(`${BASE}/threads`, { headers: { 'X-CSRF-TOKEN': csrf() } });
             const data    = await res.json();
             const threads = data.threads || [];
             threadList.innerHTML = '';
             if (!threads.length) {
-                threadList.innerHTML = '<div style="padding:12px 14px;color:#94a3b8;font-size:13px;font-family:DM Sans,sans-serif;">No chats yet.</div>';
+                threadList.innerHTML = '<div id="sidebar-empty">No conversations yet.<br>Start one →</div>';
                 return;
             }
             threads.forEach(t => {
@@ -569,8 +584,16 @@
                 threadList.appendChild(div);
             });
         } catch (e) {
-            threadList.innerHTML = '<div style="padding:12px 14px;color:#ef4444;font-size:13px;font-family:DM Sans,sans-serif;">Error loading chats.</div>';
+            threadList.innerHTML = '<div id="sidebar-empty" style="color:#ef4444">Error loading.</div>';
         }
+    }
+
+    function refreshActiveThread() {
+        document.querySelectorAll('.thread-item').forEach(el => {
+            const btn = el.querySelector('.thread-del-btn');
+            const tid = btn ? btn.getAttribute('onclick').match(/'([^']+)'/)?.[1] : null;
+            el.classList.toggle('active', tid === currentThreadId);
+        });
     }
 
     /* ── DOM HELPERS ── */
@@ -617,16 +640,16 @@
         const div = document.createElement('div');
         div.id = 'chat-empty';
         div.innerHTML = `
-            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" style="opacity:.45">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" style="opacity:.4">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            <p>Ask me to compare candidates, look up a specific profile, or filter by job requirements.</p>
+            <p>Ask me to compare candidates, look up a profile, or filter by job role.</p>
         `;
         Object.assign(div.style, {
             flex: '1', display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
-            color: '#94a3b8', fontFamily: "'DM Sans', sans-serif",
-            fontSize: '13px', gap: '12px', padding: '28px 20px',
+            color: '#94a3b8', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+            fontSize: '13px', gap: '10px', padding: '24px 16px',
             textAlign: 'center', lineHeight: '1.55',
         });
         messages.appendChild(div);
