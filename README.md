@@ -1,679 +1,210 @@
 # Intelligent Recruiter
 
-An AI-powered recruiter assistant that parses candidate resumes, classifies candidates, ranks candidates against job descriptions, and provides AI recruiter chatbot support.
+An AI-powered recruitment assistant that parses candidate resumes, classifies candidates, ranks them against job descriptions, and provides an AI recruiter chatbot.
+
+**Live Demo:** [https://intelligent-recruiter.mooo.com](https://intelligent-recruiter.mooo.com)
 
 ---
 
-# Local Setup Guide
+## Tech Stack
 
-Project Structure:
-
-```text
-intelligent-recruiter-ai/
-intelligent-recruiter-laravel/
-```
-
----
-
-# MySQL Setup
-
-Recommended GUI:
-
-- MySQL Workbench
-
-Create database:
-
-```sql
-CREATE DATABASE intelligent_recruiter;
-```
-
-Laravel `.env`:
-
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=intelligent_recruiter
-DB_USERNAME=root
-DB_PASSWORD=
-```
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 12 (PHP 8.2) |
+| AI Service | Python 3 + FastAPI + LangChain + LangGraph |
+| Database | MySQL 8.0 |
+| Web Server | Nginx |
+| Containerization | Docker + Docker Compose |
+| Cloud | Google Cloud Platform (Compute Engine, Jakarta) |
+| Auth | Google OAuth 2.0 (Socialite, stateless) |
 
 ---
 
-# intelligent-recruiter-ai/db.py
+## Features
 
-## TCP Connection
+- Upload PDF/DOCX resumes — AI parses and extracts candidate data
+- Candidate classification by category (IT, Business, etc.)
+- Job description matching with score, matched/missing skills, and ranking
+- AI recruiter chatbot — ask questions about candidates in natural language
+- Candidate approval workflow
+- Leaderboard view
 
-```python
-def get_conn():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "127.0.0.1"),
-        port=int(os.getenv("DB_PORT", "3306")),
-        user=os.getenv("DB_USERNAME", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        database=os.getenv("DB_DATABASE", "intelligent_recruiter"),
-    )
+---
+
+## Project Structure
+
 ```
-
-## Unix Socket Connection
-
-```python
-def get_conn():
-    return mysql.connector.connect(
-        unix_socket="/tmp/mysql.sock",
-        user="root",
-        password="enter your password in here",
-        database="intelligent_recruiter"
-    )
+IntelligentRecruiter/
+├── intelligent-recruiter-laravel/   # Laravel app (PHP-FPM)
+├── intelligent-recruiter-ai/        # Python FastAPI AI service
+├── docker-compose.yml               # Multi-service Docker setup
+└── README.md
 ```
 
 ---
 
-# Laravel Environment Example
+## Docker Services
 
-File:
+| Service | Description | Port |
+|---|---|---|
+| `mysql` | MySQL 8.0 database | 3307 (host) |
+| `app` | Laravel PHP-FPM | internal |
+| `nginx` | Web server | 80, 443 |
+| `queue` | Laravel queue worker | internal |
+| `python` | FastAPI AI backend | 8001 |
 
-```text
-intelligent-recruiter-laravel/.env
+---
+
+## Local Setup (Docker)
+
+### Prerequisites
+
+- Docker + Docker Compose
+- Git
+
+### Steps
+
+**1. Clone the repo**
+```bash
+git clone https://github.com/nando135/IntelligentRecruiter.git
+cd IntelligentRecruiter
 ```
 
-Example:
+**2. Configure environment files**
 
+`intelligent-recruiter-laravel/.env`:
 ```env
 APP_NAME="Intelligent Recruiter"
 APP_ENV=local
 APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
+APP_URL=http://localhost:8000
 
 DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
+DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=intelligent_recruiter
 DB_USERNAME=root
-DB_PASSWORD=
+DB_PASSWORD=your_password
 
 QUEUE_CONNECTION=database
+PYTHON_AI_URL=http://python:8001
 
-PYTHON_AI_URL=http://127.0.0.1:8001
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 ```
 
----
-
-# Python AI Environment Example
-
-File:
-
-```text
-intelligent-recruiter-ai/.env
-```
-
-Example:
-
+`intelligent-recruiter-ai/.env`:
 ```env
-OLLAMA_MODEL=llama3.2:1b
-OLLAMA_URL=http://127.0.0.1:11434
-
-DB_HOST=127.0.0.1
+DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=intelligent_recruiter
 DB_USERNAME=root
-DB_PASSWORD=
+DB_PASSWORD=your_password
 ```
 
----
-
-# ============================================
-# TERMINAL 1 — OLLAMA
-# ============================================
-
-## Bash (macOS/Linux)
-
+**3. Create root `.env` for Docker Compose**
 ```bash
-# check installed models
-ollama list
-
-# pull model
-ollama pull llama3.2:1b
-
-# start ollama
-ollama serve
+echo "DB_PASSWORD=your_password
+DB_DATABASE=intelligent_recruiter" > .env
 ```
 
-## PowerShell (Windows)
-
-```powershell
-# check installed models
-ollama list
-
-# pull model
-ollama pull llama3.2:1b
-
-# start ollama
-ollama serve
-```
-
-Keep terminal running.
-
----
-
-# ============================================
-# TERMINAL 2 — AI BACKEND SETUP
-# ============================================
-
-## Bash (macOS/Linux)
-
+**4. Start the containers**
 ```bash
-cd intelligent-recruiter-ai
-
-# deactivate current venv
-deactivate
-
-# remove old venv
-rm -rf venv
-
-# create new venv
-python3 -m venv venv
-
-# activate venv
-source venv/bin/activate
-
-# upgrade pip
-python -m pip install --upgrade pip
-
-# install requirements
-python -m pip install -r requirements.txt
+docker compose up -d --build
 ```
 
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-ai
-
-# deactivate current venv
-deactivate
-
-# remove old venv
-Remove-Item -Recurse -Force venv
-
-# create new venv
-python -m venv venv
-
-# activate venv
-.\venv\Scripts\Activate.ps1
-
-# upgrade pip
-python -m pip install --upgrade pip
-
-# install requirements
-python -m pip install -r requirements.txt
+**5. Run setup commands**
+```bash
+docker exec intelligentrecruiter-app-1 composer install --no-dev --optimize-autoloader
+docker exec intelligentrecruiter-app-1 php artisan key:generate
+docker exec intelligentrecruiter-app-1 php artisan migrate --force
+docker exec intelligentrecruiter-app-1 php artisan storage:link
+docker exec intelligentrecruiter-app-1 chmod -R 775 storage bootstrap/cache
+docker exec intelligentrecruiter-app-1 chown -R www-data:www-data storage bootstrap/cache
 ```
 
-If blocked:
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Then activate again:
-
-```powershell
-.\venv\Scripts\Activate.ps1
-```
-
----
-
-# ============================================
-# TERMINAL 3 — LARAVEL SETUP
-# ============================================
-
-## Bash (macOS/Linux)
-
+**6. Build frontend assets**
 ```bash
 cd intelligent-recruiter-laravel
-
-# deactivate python venv
-deactivate
-
-# install dependencies
-composer install
-
-# install reverb
-composer require laravel/reverb
-
-# install reverb config
-php artisan reverb:install
+npm install
+npm run build
+cd ..
 ```
 
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-laravel
-
-# deactivate python venv
-deactivate
-
-# install dependencies
-composer install
-
-# install reverb
-composer require laravel/reverb
-
-# install reverb config
-php artisan reverb:install
+**7. Open the app**
+```
+http://localhost:8000
 ```
 
 ---
 
-# ============================================
-# TERMINAL 4 — MYSQL MIGRATION
-# ============================================
+## Google OAuth Setup
 
-## Bash (macOS/Linux)
-
-```bash
-cd intelligent-recruiter-laravel
-
-php artisan migrate
-```
-
-Fresh reset:
-
-```bash
-php artisan migrate:fresh
-```
-
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-laravel
-
-php artisan migrate
-```
-
-Fresh reset:
-
-```powershell
-php artisan migrate:fresh
-```
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create an OAuth 2.0 Client ID (Web application)
+3. Add authorized redirect URI: `http://localhost:8000/auth/google/callback`
+4. Copy Client ID and Secret into `intelligent-recruiter-laravel/.env`
 
 ---
 
-# ============================================
-# TERMINAL 5 — REVERB
-# ============================================
+## How to Use
 
-## Bash (macOS/Linux)
+**1. Login** with Google OAuth
 
-```bash
-cd intelligent-recruiter-laravel
+**2. Upload CV** — PDF or DOCX resume. The system will:
+- Parse candidate details (name, skills, experience, education, projects)
+- Classify candidate by category
+- Store profile in MySQL
 
-php artisan reverb:start
-```
+**3. View Candidate Profile** — parsed skills, experience, education, and AI classification
 
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-laravel
-
-php artisan reverb:start
-```
-
-Keep terminal running.
-
----
-
-# ============================================
-# TERMINAL 6 — QUEUE WORKER
-# ============================================
-
-## Bash (macOS/Linux)
-
-```bash
-cd intelligent-recruiter-laravel
-
-php artisan queue:work
-```
-
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-laravel
-
-php artisan queue:work
-```
-
-Keep terminal running.
-
----
-
-# ============================================
-# TERMINAL 7 — LARAVEL SERVER
-# ============================================
-
-## Bash (macOS/Linux)
-
-```bash
-cd intelligent-recruiter-laravel
-
-php artisan serve
-```
-
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-laravel
-
-php artisan serve
-```
-
-Laravel URL:
-
-```text
-http://127.0.0.1:8000
-```
-
-Keep terminal running.
-
----
-
-# ============================================
-# TERMINAL 8 — FASTAPI AI BACKEND
-# ============================================
-
-## Bash (macOS/Linux)
-
-```bash
-cd intelligent-recruiter-ai
-
-source venv/bin/activate
-
-python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
-```
-
-## PowerShell (Windows)
-
-```powershell
-cd intelligent-recruiter-ai
-
-.\venv\Scripts\Activate.ps1
-
-python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
-```
-
-FastAPI URL:
-
-```text
-http://127.0.0.1:8001
-```
-
-Keep terminal running.
-
-
----
-
-# ============================================
-# HOW TO USE THE SYSTEM
-# ============================================
-
-## Step 1 — Open Laravel
-
-Open browser:
-
-```text
-http://127.0.0.1:8000
-```
-
----
-
-## Step 2 — Upload Resume
-
-Upload PDF or DOCX resume.
-
-The system will:
-
-1. Upload resume to Laravel
-2. Send file to FastAPI
-3. Parse candidate data
-4. Save candidate into MySQL
-5. Classify candidate category
-6. Store candidate profile
-
----
-
-## Step 3 — View Candidate Profile
-
-You can view:
-
-- Name
-- Skills
-- Experience
-- Education
-- Projects
-- Certifications
-- Resume summary
-- Candidate category
-
----
-
-## Step 4 — Use Job Description Matching
-
-Paste job description such as:
-
-```text
-We are hiring a Junior AI Automation Engineer with Laravel, Python, FastAPI, MySQL, AI chatbot, and workflow automation experience.
-```
-
-Then calculate JD match.
-
-The system will show:
-
+**4. Match against Job Description** — paste a JD and get:
 - Match percentage
-- Matched skills
-- Missing skills
+- Matched and missing skills
 - Resume evidence
-- Candidate ranking
-- Recommendation reason
+- Candidate ranking and recommendation
 
----
-
-## Step 5 — Use AI Recruiter Chatbot
-
-Example prompts:
-
-```text
-Who is the best candidate for AI Engineer?
+**5. Chat with AI Recruiter** — example prompts:
 ```
-
-```text
+Who is the best candidate for AI Engineer?
 Compare top 3 Laravel candidates.
-```
-
-```text
 Which candidates know FastAPI and MySQL?
-```
-
-```text
 Why is this candidate ranked first?
 ```
 
----
-
-## Step 6 — Approve Candidate
-
-Approve shortlisted candidate.
-
-The system can:
-
-- Update approval status
-- Save approved candidates
-- Queue approval emails
-- Track approved candidate list
+**6. Approve Candidates** — shortlist and track approved candidates
 
 ---
 
-# ============================================
-# FINAL RUNNING SERVICES
-# ============================================
+## System Flow
 
-| Service | URL |
-|---|---|
-| Laravel | http://127.0.0.1:8000 |
-| FastAPI | http://127.0.0.1:8001 |
-| Ollama | http://127.0.0.1:11434 |
-
-
-
-# ============================================
-# HOW TO USE THE SYSTEM
-# ============================================
-
-## Step 1 — Open Laravel System
-
-Open browser:
-
-```text
-http://127.0.0.1:8000
 ```
-
----
-
-## Step 2 — Upload Candidate Resume
-
-Upload:
-
-- PDF resume
-- DOCX resume
-
-The system will:
-
-1. Upload the resume to Laravel
-2. Send the file to FastAPI
-3. Extract candidate details
-4. Save candidate data into MySQL
-5. Classify candidate category
-6. Store skills, education, projects, and experience
-
----
-
-## Step 3 — View Candidate Profile
-
-Open candidate detail page.
-
-You can view:
-
-- Name
-- Skills
-- Experience
-- Education
-- Projects
-- Certifications
-- AI classification
-- Resume evidence
-
----
-
-## Step 4 — Job Description Matching
-
-Go to leaderboard or matching page.
-
-Paste job description example:
-
-```text
-We are hiring a Junior AI Automation Engineer with Laravel, PHP, MySQL, Python, API development, AI workflow automation, and chatbot development experience.
-```
-
-Then click:
-
-```text
-Calculate JD Match
-```
-
-The system will calculate:
-
-- Match percentage
-- Matched skills
-- Missing skills
-- Resume evidence
-- Recommendation reason
-- Candidate ranking
-
----
-
-## Step 5 — Use AI Recruiter Chatbot
-
-Use chatbot examples:
-
-```text
-Who is the best candidate for AI Engineer?
-```
-
-```text
-Compare the top 3 Laravel candidates.
-```
-
-```text
-Which candidates know MySQL and FastAPI?
-```
-
-```text
-Why is this candidate ranked first?
-```
-
-The AI assistant can:
-
-- Compare candidates
-- Explain rankings
-- Filter candidates
-- Retrieve candidate details
-- Recommend shortlisted candidates
-
----
-
-## Step 6 — Approve Candidate
-
-Recruiter can approve candidate.
-
-The system will:
-
-1. Update approval status
-2. Save approved candidate
-3. Queue approval email
-4. Show approved candidate status
-
----
-
-# ============================================
-# SYSTEM FLOW
-# ============================================
-
-```text
 Recruiter Upload Resume
-        |
-        v
-Laravel Upload System
-        |
-        v
-FastAPI AI Service
-        |
-        |-- Resume Parsing
-        |-- Candidate Classification
-        |-- JD Matching
-        |-- AI Chat Agent
-        |
-        v
+        │
+        ▼
+Laravel (PHP-FPM + Nginx)
+        │
+        ▼
+Python FastAPI AI Service
+        │
+        ├── Resume Parsing
+        ├── Candidate Classification
+        ├── JD Matching
+        └── AI Chat Agent (LangGraph)
+        │
+        ▼
 MySQL Database
-        |
-        v
+        │
+        ▼
 Laravel Dashboard + Chatbot
 ```
 
 ---
 
-# ============================================
-# FINAL RUNNING SERVICES
-# ============================================
+## Live Services
 
-| Service | Port |
+| Service | URL |
 |---|---|
-| Laravel | 8000 |
-| FastAPI AI | 8001 |
-| Ollama | 11434 |
+| Web App | https://intelligent-recruiter.mooo.com |
+| FastAPI AI | http://intelligent-recruiter.mooo.com:8001 |
